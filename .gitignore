@@ -22,8 +22,9 @@ obmen.ini
 /test/*.ini
 /test/*.log
 /test/dl.txt
-/test/share*/
-/test/tmp*/
+/test/dom-*.html
+/test/edge-*/
+/test/*share*/
 
 # ---- состояние синхронизации и недописанные передачи ----
 .obmen-state.json

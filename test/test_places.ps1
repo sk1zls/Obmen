@@ -1,8 +1,8 @@
 # Быстрый переход в окне «Добавить папку»: Документы, Рабочий стол, Изображения,
 # Загрузки, Музыка, Видео, домашняя папка, Все диски. Плюс имя папки в сети.
-$ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'common.ps1')
 $root = Split-Path -Parent $PSScriptRoot
-$exe = Join-Path $root 'build\obmen.exe'
+$exe = Get-ObmenExe
 $t = Join-Path $root 'test'
 $share = Join-Path $t 'shareA'
 $cfg = Join-Path $t 'places.ini'
@@ -10,8 +10,7 @@ $base = 'http://127.0.0.1:8103'
 $edgeTmp = Join-Path $t 'edge-places'
 
 function Stop-Nodes {
-    Get-Process obmen -ErrorAction SilentlyContinue | Stop-Process -Force
-    Start-Sleep -Milliseconds 700
+    Stop-AllTestNodes
 }
 
 function Send-Cdp($ws, [int]$id, [string]$method, $params) {
@@ -90,9 +89,8 @@ try {
     if ($d.drives.Count -lt 1) { throw 'список дисков пуст' }
 
     Write-Host '--- окно выбора папки в браузере (headless Edge + CDP) ---'
-    $edgePath = 'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
-    if (-not (Test-Path $edgePath)) { $edgePath = 'C:\Program Files\Microsoft\Edge\Application\msedge.exe' }
-    if (-not (Test-Path $edgePath)) { throw 'Edge не найден — нечем проверить интерфейс' }
+    $edgePath = Get-EdgePath
+    if (-not $edgePath) { throw 'Edge не найден — нечем проверить интерфейс (нужен Microsoft Edge)' }
     if (Test-Path $edgeTmp) { Remove-Item -Recurse -Force $edgeTmp }
     $edge = Start-Process -FilePath $edgePath -PassThru -WindowStyle Hidden -ArgumentList @(
         '--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
@@ -193,15 +191,18 @@ try {
 
     $null = Eval-Js $ws 15 "Array.from(document.querySelectorAll('#browseMatches .place')).filter(function(b){return b.textContent.indexOf('Фото')>=0})[0].click(); 'ok'"
     Start-Sleep -Milliseconds 600
-    $picked = Eval-Js $ws 16 "document.getElementById('browseName').value"
-    $hintOk = Eval-Js $ws 17 "document.getElementById('browseHint').className"
-    Write-Host ("  после выбора имени: '" + $picked + "', класс подсказки: " + $hintOk)
-    if ($picked -ne 'Фото') { throw 'кнопка с именем соседа не подставила имя' }
+    # Щелчок по папке соседа подставляет её имя как КЛЮЧ синхронизации: своё имя
+    # папки можно оставить любым (так описано в README).
+    $pickedKey = Eval-Js $ws 16 "document.getElementById('browseKey').value"
+    $pickedName = Eval-Js $ws 17 "document.getElementById('browseName').value"
+    $hintOk = Eval-Js $ws 18 "document.getElementById('browseHint').className"
+    Write-Host ("  после выбора папки соседа: ключ='" + $pickedKey + "', имя='" + $pickedName + "', класс подсказки: " + $hintOk)
+    if ($pickedKey -ne 'Фото') { throw 'кнопка с именем соседа не подставила ключ синхронизации' }
     if ($hintOk -notlike '*ok*') { throw 'нет подтверждения, что папки синхронизируются' }
 
-    $null = Eval-Js $ws 18 "document.getElementById('btnBrowseCancel').click(); 'ok'"
+    $null = Eval-Js $ws 19 "document.getElementById('btnBrowseCancel').click(); 'ok'"
     Start-Sleep -Milliseconds 500
-    $badge = Eval-Js $ws 19 "(document.querySelector('#shareList .shareinfo .nopair') || {}).textContent || ''"
+    $badge = Eval-Js $ws 20 "(document.querySelector('#shareList .shareinfo .nopair') || {}).textContent || ''"
     Write-Host ("  отметка в списке папок: " + $badge)
     if ($badge -notlike '*нет пары*') { throw 'у папки без пары нет отметки' }
 

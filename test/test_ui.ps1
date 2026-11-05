@@ -1,7 +1,7 @@
 # Проверка встроенного окна (WebView2) и иконки в трее.
-$ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'common.ps1')
 $root = Split-Path -Parent $PSScriptRoot
-$exe = Join-Path $root 'build\obmen.exe'
+$exe = Get-ObmenExe
 $t = Join-Path $root 'test'
 $share = Join-Path $t 'shareA'
 $log = Join-Path $t 'ui.log'
@@ -45,8 +45,7 @@ function Find-Main {
     return [IntPtr]$script:found
 }
 
-Get-Process obmen -ErrorAction SilentlyContinue | Stop-Process -Force
-Start-Sleep -Milliseconds 700
+Stop-AllTestNodes
 Remove-Item -Force $log, $cfg -ErrorAction SilentlyContinue
 
 $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = '--remote-debugging-port=9226'
@@ -133,6 +132,6 @@ try {
     Write-Host 'ИТОГ: окно, трей и веб-интерфейс внутри exe работают'
 }
 finally {
-    Get-Process obmen -ErrorAction SilentlyContinue | Stop-Process -Force
+    Stop-AllTestNodes
     Remove-Item Env:\WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS -ErrorAction SilentlyContinue
 }

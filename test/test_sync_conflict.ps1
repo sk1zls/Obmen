@@ -1,8 +1,8 @@
 # Конфликты синхронизации: побеждает более новая версия файла.
 # Старая копия не должна затирать свежую правку, и файл не должен «мигать» между узлами.
-$ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'common.ps1')
 $root = Split-Path -Parent $PSScriptRoot
-$exe = Join-Path $root 'build\obmen.exe'
+$exe = Get-ObmenExe
 $t = Join-Path $root 'test'
 $shareA = Join-Path $t 'shareA'
 $shareB = Join-Path $t 'shareB'
@@ -12,8 +12,7 @@ $A = 'http://127.0.0.1:8101'
 $B = 'http://127.0.0.1:8102'
 
 function Stop-Nodes {
-    Get-Process obmen -ErrorAction SilentlyContinue | Stop-Process -Force
-    Start-Sleep -Milliseconds 700
+    Stop-AllTestNodes
 }
 
 function Wait-Text([string]$path, [string]$want, [int]$seconds = 40) {

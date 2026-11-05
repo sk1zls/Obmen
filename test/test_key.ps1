@@ -1,8 +1,8 @@
 # Синхронизация по ключу: папки с разными именами связываются вручную.
 # «Games» на A и «игры» на B должны синхронизироваться, если у A задан ключ «игры».
-$ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'common.ps1')
 $root = Split-Path -Parent $PSScriptRoot
-$exe = Join-Path $root 'build\obmen.exe'
+$exe = Get-ObmenExe
 $t = Join-Path $root 'test'
 $shareA = Join-Path $t 'shareKeyA'
 $shareB = Join-Path $t 'shareKeyB'
@@ -12,8 +12,7 @@ $A = 'http://127.0.0.1:8131'
 $B = 'http://127.0.0.1:8132'
 
 function Stop-Nodes {
-    Get-Process obmen -ErrorAction SilentlyContinue | Stop-Process -Force
-    Start-Sleep -Milliseconds 700
+    Stop-AllTestNodes
 }
 
 function Wait-Path([string]$path, [bool]$exists, [int]$seconds = 40) {

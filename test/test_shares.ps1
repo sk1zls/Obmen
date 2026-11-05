@@ -1,7 +1,7 @@
 # Проверка нескольких сетевых папок: API, синхронизация по именам, FTP-корень.
-$ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'common.ps1')
 $root = Split-Path -Parent $PSScriptRoot
-$exe = Join-Path $root 'build\obmen.exe'
+$exe = Get-ObmenExe
 $t = Join-Path $root 'test'
 
 $shareA = Join-Path $t 'shareA'
@@ -12,8 +12,7 @@ $cfgA = Join-Path $t 'a.ini'
 $cfgB = Join-Path $t 'b.ini'
 
 function Stop-Nodes {
-    Get-Process obmen -ErrorAction SilentlyContinue | Stop-Process -Force
-    Start-Sleep -Milliseconds 700
+    Stop-AllTestNodes
 }
 
 Stop-Nodes
@@ -133,9 +132,8 @@ try {
 
     Write-Host ''
     Write-Host '--- веб-интерфейс: список папок ---'
-    $edge = 'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
-    if (-not (Test-Path $edge)) { $edge = 'C:\Program Files\Microsoft\Edge\Application\msedge.exe' }
-    if (Test-Path $edge) {
+    $edge = Get-EdgePath
+    if ($edge) {
         $dom = Join-Path $t 'dom-shares.html'
         & $edge --headless=new --disable-gpu --no-sandbox --user-data-dir="$t\edge-tmp" `
             --virtual-time-budget=6000 --dump-dom 'http://127.0.0.1:8091/' 2>$null |

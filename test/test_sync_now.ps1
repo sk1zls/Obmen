@@ -4,9 +4,9 @@
 #   2. после нажатия файлы сразу оказываются на других устройствах;
 #   3. нажатие не командует соседом: папку, которая лежит на B, отправляет
 #      только B — нажатие на A её не забирает и не трогает.
-$ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'common.ps1')
 $root = Split-Path -Parent $PSScriptRoot
-$exe = Join-Path $root 'build\obmen.exe'
+$exe = Get-ObmenExe
 $t = Join-Path $root 'test'
 $A = 'http://127.0.0.1:8141'
 $B = 'http://127.0.0.1:8142'
@@ -20,8 +20,7 @@ $cfgA = Join-Path $t 'now-a.ini'
 $cfgB = Join-Path $t 'now-b.ini'
 
 function Stop-Nodes {
-    Get-Process obmen -ErrorAction SilentlyContinue | Stop-Process -Force
-    Start-Sleep -Milliseconds 700
+    Stop-AllTestNodes
 }
 
 function Post([string]$uri) {

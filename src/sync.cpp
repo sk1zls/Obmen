@@ -220,6 +220,18 @@ static void pull_share(const Peer& p, const store::ShareInfo& s) {
             continue;
         }
 
+        // Пока шла передача, файл (или всю папку) могли удалить — на этом узле или
+        // на соседе. Тогда не записываем его обратно: удаление важнее гонки с загрузкой,
+        // иначе файл «воскресает» сразу после удаления.
+        int64_t tombAfter = store::tombstone_time(share, rel);
+        if (tombAfter > 0 && mtime <= tombAfter) {
+            tx_done(txId, "error: удалён во время передачи");
+            progress_failed(size, lastReport);
+            std::error_code ecr;
+            fs::remove(tmp, ecr);
+            continue;
+        }
+
         std::error_code ecm;
         fs::last_write_time(tmp, store::from_epoch(mtime), ecm);
         std::string rerr;
